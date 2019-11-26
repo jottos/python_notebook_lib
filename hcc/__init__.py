@@ -46,7 +46,7 @@ def icd_2_hcc(icd, dos=None, mapping=None, label_or_payment_year="2016-icd-hcc")
                 # mostly worried taht the date might be bad
                 code_date = date_parser(dos)
                 mapping = ICD9 if code_date < _icd_10_date else ICD10
-                return Code(icd, mapping).toHcc(label_or_payment_year)
+            return Code(icd, mapping).toHcc(label_or_payment_year)
         except Exception as e:
             print("Exception occurred mapping icd->hcc: ", e)
             return []

@@ -1,4 +1,6 @@
 '''
+*** This file is deprecated in this package and has been moved to joslib.signal.utils ***
+
 This package contains support functions for getting and handling signals that 
 go into HCC events. 
 

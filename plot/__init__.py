@@ -6,7 +6,25 @@ import matplotlib.pyplot as plt
 import joslib.stats
 
 __version__ = "0.1.0"
-__all__ = ['is_outlier', 'regression_plot', 'plot_groups_with_different_colors']
+__all__ = ['is_outlier', 'regression_plot', 'plot_groups_with_different_colors', 'plot_percentiles']
+
+def plot_percentiles(df:pd.DataFrame, columns, how_many=10, logy=False) -> None:
+    '''
+    break dataframe into how_many n'ciles and plot the specified columns as x,y
+    scatter. 
+
+    df       - our data
+    columns  - columns we want broken down
+    how_many - number of bins to break data into
+    logy     - ploy y dimension in log space if true
+
+    returns a     cut framed 
+    '''
+    def make_percentiles(how_many):
+        return [n/how_many for n in range(how_many)]
+    x = df[columns].describe(percentiles=make_percentiles(how_many))
+    x[4:].plot(logy=logy)
+
 
 def plot_groups_with_different_colors(
         grouped_df:pd.core.groupby.generic.DataFrameGroupBy,
@@ -15,7 +33,7 @@ def plot_groups_with_different_colors(
         figsize:Tuple[float]=(25.0,25.0), 
         legend:bool=True, 
         logplot:bool=False,
-        max_groups:int=None):
+        max_groups:int=None) -> None:
     """
     given a DataFrameGroupBy scatter plot the content coloring each group differently
     
@@ -49,7 +67,7 @@ def plot_groups_with_different_colors(
 
 
 
-def regression_plot(data_frame:pd.DataFrame, x_column_name:str, y_column_name:str):
+def regression_plot(data_frame:pd.DataFrame, x_column_name:str, y_column_name:str) -> None:
     """
     given a data frame and two columns to use, create a scatter diagram and regression line
     do this in normal and log(10) space and plot
