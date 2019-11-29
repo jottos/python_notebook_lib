@@ -119,7 +119,7 @@ def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
         if months == []:
             months = None
         
-        day_clause = f" and days in ({str([f'{d:02}' for d in days])[1:-1]})" if days else ""
+        day_clause = f" and day in ({str([f'{d:02}' for d in days])[1:-1]})" if days else ""
         if months and len(months) > 1:
             if days:
                 raise Exception("generate_clause: illegal clause parameters")
