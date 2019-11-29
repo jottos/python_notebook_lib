@@ -16,6 +16,36 @@ for test in test_cases:
     print(f"TEST {test}")
     print(create_hive_date_range_filter(*test))
     print()
+
+
+TEST ('10/22/2019', '10/30/2019')
+((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30')))
+
+TEST ('10/22/2019', '11/4/2019')
+((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2019' and month = '11' and days in ('01', '02', '03', '04')))
+
+TEST ('1/1/2019', '3/4/2019')
+((year = '2019' and month in ('01', '02')
+  or (year = '2019' and month = '03' and days in ('01', '02', '03', '04')))
+
+TEST ('2/10/2019', '3/4/2019')
+((year = '2019' and month = '02' and days in ('10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28'))
+  or (year = '2019' and month = '03' and days in ('01', '02', '03', '04')))
+
+TEST ('10/22/2019', '11/4/2020')
+((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2019' and month in ('11', '12')
+  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+  or (year = '2020' and month = '11' and days in ('01', '02', '03', '04')))
+
+TEST ('10/22/2017', '11/4/2020')
+((year = '2017' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2017' and month in ('11', '12')
+  or (year = '2018')
+  or (year = '2019')
+  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+  or (year = '2020' and month = '11' and days in ('01', '02', '03', '04')))
 """
 
 def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
