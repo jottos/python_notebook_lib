@@ -62,6 +62,9 @@ def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
     5) span multiple month boundaries where one is a year boundary
     6) span multiple year bounaries
     """
+    if parse_date(end_date) < parse_date(start_date):
+        raise Exception(f"create_hive_date_range: illegal date range {start_date}, {end_date}")
+    
     days_in_month = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30, 
                      7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
     def get_days_in_month(date:datetime, days:str) -> List[str]:
