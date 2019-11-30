@@ -7,48 +7,12 @@ __version__ = "0.1.0"
 __all__ = ['create_hive_date_range_filter']
 
 """
-python 3.4? and above - uses types and "f" strings
+requires python 3.4? and above - uses types and "f" strings
 
-
-test_cases = [("10/1/2019", "10/1/2019"),("10/22/2019", "10/30/2019"), ("10/22/2019", "11/4/2019"),("1/1/2019", "3/4/2019"),("2/10/2019", "3/4/2019"),("10/22/2019", "11/4/2020"),("10/22/2017", "11/4/2020")]
-
-for test in test_cases:
-    print(f"TEST {test}")
-    print(create_hive_date_range_filter(*test))
-    print()
-
-
-TEST ('10/1/2019', '10/1/2019')
-((year = '2019' and month = '10' and days in ('01')))
-
-TEST ('10/22/2019', '10/30/2019')
-((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30')))
-
-TEST ('10/22/2019', '11/4/2019')
-((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
-  or (year = '2019' and month = '11' and days in ('01', '02', '03', '04')))
-
-TEST ('1/1/2019', '3/4/2019')
-((year = '2019' and month in ('01', '02')
-  or (year = '2019' and month = '03' and days in ('01', '02', '03', '04')))
-
-TEST ('2/10/2019', '3/4/2019')
-((year = '2019' and month = '02' and days in ('10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28'))
-  or (year = '2019' and month = '03' and days in ('01', '02', '03', '04')))
-
-TEST ('10/22/2019', '11/4/2020')
-((year = '2019' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
-  or (year = '2019' and month in ('11', '12')
-  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
-  or (year = '2020' and month = '11' and days in ('01', '02', '03', '04')))
-
-TEST ('10/22/2017', '11/4/2020')
-((year = '2017' and month = '10' and days in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
-  or (year = '2017' and month in ('11', '12')
-  or (year = '2018')
-  or (year = '2019')
-  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
-  or (year = '2020' and month = '11' and days in ('01', '02', '03', '04')))
+you can run the unittests in a Jupyter Notebook with 
+> import unittest
+> from joslib.dbsupport import TestHiveDateRange
+> unittest.main(argv=[''], verbosity=2, exit=False)
 """
 
 def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
@@ -164,7 +128,7 @@ def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
                     # this is the last month in the series, get the days from 1st of month till last day
                     if is_last_day_in_month(ed):
                         # if last days is last day in month, add entire month
-                        acumulated_months.append(month)
+                        accumulated_months.append(month)
                     else:
                         days = get_days_in_month(ed, 'from_beginning')
                 else:
@@ -184,3 +148,70 @@ def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
     or_str = '\n  or '
     return f"({or_str.join(clauses)})"
 
+
+import unittest
+class TestHiveDateRange(unittest.TestCase):
+
+    def test_single_day(self):
+        self.assertEqual(create_hive_date_range_filter("10/1/2019", "10/1/2019"),
+                        """((year = '2019' and month = '10' and day in ('01')))""")
+
+    def test_all_in_one_month(self):
+        self.assertEqual(create_hive_date_range_filter("10/22/2019", "10/30/2019"),
+                        """((year = '2019' and month = '10' and day in ('22', '23', '24', '25', '26', '27', '28', '29', '30')))""")
+
+    def test_span_one_month_boundary(self):
+        self.assertEqual(create_hive_date_range_filter("10/22/2019", "11/4/2019"),
+                        """((year = '2019' and month = '10' and day in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2019' and month = '11' and day in ('01', '02', '03', '04')))""")
+        
+    def test_span_one_month_boundary_over_year_boundary(self):
+        self.assertEqual(create_hive_date_range_filter("12/25/2019", "1/3/2020"),
+                        """((year = '2019' and month = '12' and day in ('25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2020' and month = '01' and day in ('01', '02', '03')))""")
+        
+    def test_span_multiple_months_same_year_start_full_month(self):
+        self.assertEqual(create_hive_date_range_filter("1/1/2019", "3/4/2019"),
+                        """((year = '2019' and month in ('01', '02')
+  or (year = '2019' and month = '03' and day in ('01', '02', '03', '04')))""")
+
+    def test_span_multiple_months_same_year_end_full_month(self):
+        self.assertEqual(create_hive_date_range_filter("1/5/2019", "4/30/2019"),
+                        """((year = '2019' and month = '01' and day in ('05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2019' and month in ('02', '03', '04'))""")
+
+    def test_span_multiple_months_same_year_start_and_end_full_month(self):
+        self.assertEqual(create_hive_date_range_filter("1/1/2019", "4/30/2019"),
+                        """((year = '2019' and month in ('01', '02', '03', '04'))""")
+
+    def test_span_multiple_months_boundary_over_year_boundary(self):
+        self.assertEqual(create_hive_date_range_filter("10/22/2019", "11/4/2020"),
+                        """((year = '2019' and month = '10' and day in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2019' and month in ('11', '12')
+  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+  or (year = '2020' and month = '11' and day in ('01', '02', '03', '04')))""")
+
+    def test_span_multiple_months_boundary_over_multiple_year_boundary(self):
+        self.assertEqual(create_hive_date_range_filter("10/22/2017", "11/4/2020"),
+                        """((year = '2017' and month = '10' and day in ('22', '23', '24', '25', '26', '27', '28', '29', '30', '31'))
+  or (year = '2017' and month in ('11', '12')
+  or (year = '2018')
+  or (year = '2019')
+  or (year = '2020' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10')
+  or (year = '2020' and month = '11' and day in ('01', '02', '03', '04')))""")
+
+    def test_jan1_dec31_single_year(self):
+        self.assertEqual(create_hive_date_range_filter("1/1/2018", "12/31/2018"),
+                        """((year = '2018' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'))""")
+
+    def test_jan1_dec31_multiple_year(self):
+        self.assertEqual(create_hive_date_range_filter("1/1/2018", "12/31/2019"),
+                        """((year = '2018' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')
+  or (year = '2019' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'))""")
+
+    def test_leap_year(self):
+        # ugh, not sure how to test this
+        # test for going to feb 19 - should only work in a leap year but...
+        self.assertEqual(create_hive_date_range_filter("2/10/2019", "2/28/2019"), "this test always fails for now ")
+        with self.assertRaises(ValueError):
+            create_hive_date_range_filter("2/10/2019", "2/29/2019")
