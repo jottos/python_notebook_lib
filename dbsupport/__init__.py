@@ -138,7 +138,11 @@ def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
 
                 if month == last_month and len(accumulated_months) > 0:
                     # we reached end of first year boundary and need to emit any accumulated months
-                    clauses.append(generate_clause(year, accumulated_months, None))
+                    if len(accumulated_months) == 12:
+                        #just emit the year
+                        clauses.append(generate_clause(year, None, None))
+                    else:
+                        clauses.append(generate_clause(year, accumulated_months, None))
                     accumulated_months = []
 
                 if days:
@@ -202,13 +206,14 @@ class TestHiveDateRange(unittest.TestCase):
 
     def test_jan1_dec31_single_year(self):
         self.assertEqual(create_hive_date_range_filter("1/1/2018", "12/31/2018"),
-                        """((year = '2018' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'))""")
+                        """((year = '2018'))""")
 
     def test_jan1_dec31_multiple_year(self):
         self.assertEqual(create_hive_date_range_filter("1/1/2018", "12/31/2019"),
-                        """((year = '2018' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12')
-  or (year = '2019' and month in ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'))""")
+                        """((year = '2018')
+  or (year = '2019'))""")
 
+ 
     def test_leap_year(self):
         # ugh, not sure how to test this
         # test for going to feb 19 - should only work in a leap year but...
