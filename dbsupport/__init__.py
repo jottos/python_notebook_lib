@@ -4,7 +4,7 @@ from dateutil.parser import parse as parse_date
 from datetime import datetime
 
 __version__ = "0.1.0"
-__all__ = ['create_hive_date_range_filter']
+__all__ = ['create_hive_date_range_filter', 'check_file_writable']
 
 """
 requires python 3.4? and above - uses types and "f" strings
@@ -14,6 +14,22 @@ you can run the unittests in a Jupyter Notebook with
 > from joslib.dbsupport import TestHiveDateRange
 > unittest.main(argv=[''], verbosity=2, exit=False)
 """
+
+def check_file_writable(fnm):
+    import os
+    if os.path.exists(fnm):
+        # path exists
+        if os.path.isfile(fnm): # is it a file or a dir?
+            # also works when file is a link and the target is writable
+            return os.access(fnm, os.W_OK)
+        else:
+            return False # path is a dir, so cannot write as a file
+    # target does not exist, check perms on parent dir
+    pdir = os.path.dirname(fnm)
+    if not pdir: pdir = '.'
+    # target is creatable if parent dir is writable
+    return os.access(pdir, os.W_OK)
+
 
 def create_hive_date_range_filter(start_date:str, end_date:str) -> str:
     """
