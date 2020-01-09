@@ -24,7 +24,7 @@ def plot_percentiles(df:pd.DataFrame, columns, how_many=10, logy=False, figsize:
         return [n/how_many for n in range(how_many)]
     x = df[columns].describe(percentiles=make_percentiles(how_many))
     x[4:].plot(logy=logy, figsize=figsize)
-
+    plt.show(block=True)
 
 def plot_groups_with_different_colors(
         grouped_df:pd.core.groupby.generic.DataFrameGroupBy,
@@ -35,8 +35,9 @@ def plot_groups_with_different_colors(
         legend:bool=True, 
         logplot:bool=False,
         max_groups:int=None,
-        title=None,
-        marker='.') -> None:
+        title:str='',
+        marker='.',
+        force_show=False) -> None:
     """
     given a DataFrameGroupBy scatter plot the content coloring each group differently
     
@@ -48,7 +49,8 @@ def plot_groups_with_different_colors(
     logplot - plot in log space if true
     max_groups - show ownly this many groups, default is all
     marker  - change the point representation, default is "." == "point", "o" = circle "," = pixel
-    
+    force_show - this is useful to force the plotting to complete before returning so
+      that subsequent displays in the notebook will come after the plot
 
     NOTE: there are only 10 colors so more than 10 groups is no bueno
     NOTE: no null/nan values allowed in the x or y columns
@@ -57,63 +59,26 @@ def plot_groups_with_different_colors(
     """
     if not ax:
         fig, ax = plt.subplots(figsize=figsize)
-    if title:
-        ax.set_title(title)
-    ax.margins(0.05) # Optional, just adds 5% padding to the autoscaling
+
     if logplot:
         ax.set_yscale('log')
         ax.set_xscale('log')
+
     group_count = 0
     for name, group in grouped_df:
+        #ax.plot(group[x_name], group[y_name], marker='o', linestyle='', ms=12, label=name)
         ax.plot(group[x_name], group[y_name], marker=marker, linestyle='', ms=12, label=name)
         group_count += 1
         if max_groups and group_count == max_groups:
             break
+
+    ax.set(xlabel=x_name, ylabel=y_name)
+    if title:
+        ax.set_title(title)
     if legend:
         ax.legend()
-
-        
-def plot_groups_with_different_colors(
-        grouped_df:pd.core.groupby.generic.DataFrameGroupBy,
-        x_name:str, 
-        y_name:str,
-        figsize:Tuple[float]=(10.0,10.0),
-        ax=None,
-        legend:bool=True, 
-        logplot:bool=False,
-        max_groups:int=None,
-        title=None) -> None:
-    """
-    given a DataFrameGroupBy scatter plot the content coloring each group differently
-    
-    x_name - column name for x dimension
-    y_name - column name for y dimension
-    
-    figsize - set size of plot, default is pretty big
-    legend  - show legend if true
-    logplot - plot in log space if true
-    max_groups - show ownly this many groups, default is all
-
-    NOTE: there are only 10 colors so more than 10 groups is no bueno
-    NOTE: no null/nan values allowed in the x or y columns
-
-    TODO: make sure types check out in param list, the implied optionals might hurt
-    """
-    if not ax:
-        fig, ax = plt.subplots(figsize=figsize)
-    ax.margins(0.05) # Optional, just adds 5% padding to the autoscaling
-    if logplot:
-        ax.set_yscale('log')
-        ax.set_xscale('log')
-    group_count = 0
-    for name, group in grouped_df:
-        #ax.plot(group[x_name], group[y_name], marker='o', linestyle='', ms=12, label=name)
-        ax.plot(group[x_name], group[y_name], marker='.', linestyle='', ms=12, label=name)
-        group_count += 1
-        if max_groups and group_count == max_groups:
-            break
-    if legend:
-        ax.legend()
+    if force_show:
+        plt.show(block=True)
 
 
 def regression_plot(data_frame:pd.DataFrame,
@@ -133,7 +98,6 @@ def regression_plot(data_frame:pd.DataFrame,
     thanks to http://stamfordresearch.com/linear-regression-using-pandas-python/ for basics
 
     TODO:
-    1) ENHANCEMENT: we would like to set the plot size
     2) ENHANCEMENT: report if there are any nan in df (and) remove them NAN will 
        break the regression
     """
@@ -183,6 +147,6 @@ def regression_plot(data_frame:pd.DataFrame,
     data_log.plot(kind='scatter', color='Blue', x=x_column_name, y=y_column_name, ax=axes[1], title='Log Space')
     lm_log_plot.plot(kind='line', color='Red', x=x_column_name, y=y_column_name, ax=axes[1])
 
-    plt.show()
+    plt.show(block=True)
 
     

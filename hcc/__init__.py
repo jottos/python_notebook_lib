@@ -48,7 +48,8 @@ def icd_2_hcc(icd, dos=None, mapping=None, label_or_payment_year="2016-icd-hcc")
                 mapping = ICD9 if code_date < _icd_10_date else ICD10
             return Code(icd, mapping).toHcc(label_or_payment_year)
         except Exception as e:
-            print("Exception occurred mapping icd->hcc: ", e)
+            print("Exception {} occurred mapping icd->hcc: icd:{} dos:{} mapping:{}, label_or_payment:{}"
+                  .format(e, icd, dos, mapping, label_or_payment_year))
             return []
     else:
         # make things go boom, dos or mapping required
