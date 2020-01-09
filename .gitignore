@@ -8,4 +8,4 @@
 .mypy_cache
 
 # for this project don't keep the data directory
-data
+data  
