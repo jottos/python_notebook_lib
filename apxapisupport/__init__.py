@@ -45,9 +45,8 @@ def get_document_apo(doc_uuid:str):
 
 
 def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, include_raw_text:bool=False) -> List[Dict]:
-    """
-    usage: printPages(session, doc_uuid)
-    usage: printPages(session, doc_uuid, [2, 5, 8]) 
+    """usage: get_document_pages_text(session, doc_uuid)
+    usage: get_document_pages_text(session, doc_uuid, [2, 5, 8]) 
 
     gets the clean text and HTML text from a set of pages in a document post OCR/ETL
 
@@ -55,15 +54,28 @@ def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, inc
     pages    - list of ints representing pages we want text from, no list means all pages
     inclue_raw_text - provide text w/ HTML markup (can be very verbose)
 
-    returns an array of dictionaries with text for each page
+    currrently we only support the extracted_text type which is the text that
+    the Tesseract OCR module delivers. there is an option here to ask for the
+    raw version of the text which includes all the HTML markup from the HOCR
+    that Tesseract produces (include_raw_text)
+
+    returns an array of dictionaries, one per page requested with page_number,
+    image_type, plain_text, and extracted_text
         
     TODO:
-    plain_text - is ??? JOS 
-    extracted_text is ??? JOS
+    plain_text - right now this is unused, in the past we used to extract the
+      plain text from a PDF using various tools but we found them completely
+      unreliable and when they failed they did so silently. I am keeping the
+      support here because we keep thinking we'll reinvest in this...
+
     
-    NOTE: you are only using this to access and stage a PDF for use meaning you
-          will be re-encrypting it, OR you are using it to diagnose an issue with
-          the system and will be deleting the document right after
+    NOTE: Users! you are only using this to access and stage the text from a
+          PDF for use; meaning you will be re-encrypting it, OR you are using
+          it to diagnose an issue with the system and will be deleting the
+          document right after if not only using the values in memory. don't
+          print in a notebook and forget to clear all the cells, that saves the
+          text in the ipynb file
+
     """
     from bs4 import BeautifulSoup
     import xml.etree.cElementTree as ET
@@ -83,7 +95,7 @@ def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, inc
         if page:
             pt = page.find('plainText')
             pn = page.find('pageNumber')
-            et = page.find('extractedText')
+            et = page.find('extractedText/context')
             it = page.find('imgType')
 
             if pages and int(pn.text) not in pages:
@@ -110,7 +122,7 @@ def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, inc
 
         
 
-_download_dir = "/Users/jos/Downloads/"
+_download_dir = "/Users/jschneider/Downloads/"
 
 def set_default_download_directory(download_dir):
     global _download_dir
@@ -122,7 +134,7 @@ def get_default_download_directory():
     return _download_dir
 
 
-def _write_file(file_name, file_content):
+def _write_file(file_name, file_content, download_dir):
     if _download_dir not in file_name:
         file_name = download_dir + file_name
     # make sure directory path exists
@@ -134,7 +146,7 @@ def _write_file(file_name, file_content):
     f.write(file_content)
     f.close()
 
-    
+
 def download_archived_document(session, doc_uuid, output_file_name=None, download_dir=_download_dir, org_id=None):
     """
     take a document UUID and download the associate PDF to the download_dir
@@ -155,7 +167,7 @@ def download_archived_document(session, doc_uuid, output_file_name=None, downloa
     """
     if org_id is None:
         org_id = session.dataorchestrator.document_org_id(doc_uuid).text
-    
+
     if not output_file_name:
         output_file_name = "{}_{}.arcfile".format(doc_uuid, org_id)
 
@@ -165,7 +177,7 @@ def download_archived_document(session, doc_uuid, output_file_name=None, downloa
     r = session.dataorchestrator.get_archive_document(org_id, doc_uuid)
     if r.status_code == 200:
         print("got file writing now")
-        _write_file(filepath, r.content)
+        _write_file(filepath, r.content, download_dir)
     else:
         print("Fetch failed, got {}".format(r.status_code))
 
@@ -197,7 +209,7 @@ def download_pdf_doc(s, doc_uuid:str, org=None, download_dir:str=_download_dir):
     r = s.dataorchestrator.file(doc_uuid)
     if r.status_code == 200:
         print("got file writing now")
-        _write_file(filepath, r.content)
+        _write_file(filepath, r.content, download_dir)
     else:
         print("Fetch failed, got {}".format(r.status_code))
 
