@@ -2,11 +2,13 @@
 import numpy as np
 import pandas as pd
 
+from typing import List, Set, Dict, Tuple, Optional, ClassVar
+
 __version__ = "0.1.0"
 
 __all__ = ['is_outlier', 'describe_with_percentiles']
 
-def describe_with_percentiles(df:pd.DataFrame, columns, how_many=10) -> pd.DataFrame:
+def describe_with_percentiles(df:pd.DataFrame, columns:List[str], how_many:int=10) -> pd.DataFrame:
     '''
     break dataframe into how_many n'ciles
 
