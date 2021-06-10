@@ -95,7 +95,7 @@ def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, inc
         if page:
             pt = page.find('plainText')
             pn = page.find('pageNumber')
-            et = page.find('extractedText/context')
+            et = page.find('extractedText/content')
             it = page.find('imgType')
 
             if pages and int(pn.text) not in pages:
