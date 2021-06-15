@@ -43,15 +43,17 @@ def get_document_apo(doc_uuid:str):
     except:
         return {}
 
-
-def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, include_raw_text:bool=False) -> List[Dict]:
+def get_document_pages_text(apx_session:apxapi.APXSession, doc_uuid:str, pages:List[int]=None, keep_line_breaks=True, include_raw_text:bool=False) -> List[Dict]:
     """usage: get_document_pages_text(session, doc_uuid)
     usage: get_document_pages_text(session, doc_uuid, [2, 5, 8]) 
 
     gets the clean text and HTML text from a set of pages in a document post OCR/ETL
 
     doc_uuid - document to get text from
-    pages    - list of ints representing pages we want text from, no list means all pages
+    pages    - list of ints representing pages we want text from, no list 
+      means all pages
+    keep_line_breaks - if true, will preserve ocr_lines, otherwise \n will 
+      be converted to space char
     inclue_raw_text - provide text w/ HTML markup (can be very verbose)
 
     currrently we only support the extracted_text type which is the text that
@@ -103,24 +105,28 @@ def get_document_pages_text(apx_session, doc_uuid:str, pages:List[int]=None, inc
 
             page_rec = {'page_number': pn.text, 'image_type': it.text, 'plain_text': None, 'extracted_text': None}
 
+            # plainText is a key we added if we had extracted text from PDF if it contained text
             if pt is not None and pt.text:
                 if include_raw_text:
                     page_rec['plain_text_w_markup'] = pt.text
+                # assumption here is plain_text is in html form...
                 soup = BeautifulSoup(pt.text, 'html.parser')
-                page_rec['plain_text'] = soup.get_text()
+                spans = soup.find_all('span', class_='ocr_line')
+                text_lines = [s.text.replace('\n', ' ') for s in spans]
+                page_rec['plain_text'] = '\n'.join(text_lines) if keep_line_breaks else ' '.join(text_lines)
 
             if et is not None and et.text:
                 if include_raw_text:
                     page_rec['extracted_text_w_markup'] = et.text
                 soup = BeautifulSoup(et.text, 'html.parser')
-                page_rec['extracted_text'] = soup.get_text()
-            
+                spans = soup.find_all('span', class_='ocr_line')
+                text_lines = [s.text.replace('\n', ' ') for s in spans]
+                page_rec['extracted_text'] = '\n'.join(text_lines) if keep_line_breaks else ' '.join(text_lines)
+
             document_text.append(page_rec)
             
     return document_text
 
-
-        
 
 _download_dir = "/Users/jschneider/Downloads/"
 
